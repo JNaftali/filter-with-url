@@ -36,14 +36,14 @@ const initCheckboxesReducer = (oldState, action) => {
   if (action.type !== 'INIT_CHECKBOX') return oldState;
   var state = {
     ...oldState,
-    filterList: initFromUrl(oldState.filterList),
+    filterList: initFromUrl(oldState.filterList, action.value),
   };
   return state;
 };
 
 // effects.tsx
-const isRunningInBrowser = () =>
-  window && window.history && typeof window.history.replaceState === 'function';
+// const isRunningInBrowser = () =>
+//   window && window.history && typeof window.history.replaceState === 'function';
 const filterOutUnchecked = ({ isChecked }) => isChecked;
 const mapCategoryIntoQuery = ({ query, filters }) =>
   query +
@@ -54,8 +54,6 @@ const mapCategoryIntoQuery = ({ query, filters }) =>
     .join(',');
 
 async function updateUrlParams(filterList) {
-  if (!isRunningInBrowser()) return;
-
   var activeCategories = filterList.filter(({ filters }) =>
     filters.some(filterOutUnchecked)
   );
@@ -66,9 +64,9 @@ async function updateUrlParams(filterList) {
   window.history.replaceState(null, null, query);
 }
 
-function parseUrlParams() {
-  if (window.location.href.split('?').length === 1) return [];
-  return window.location.href
+function parseUrlParams(url) {
+  if (url.split('?').length === 1) return [];
+  return url
     .split('?')[1]
     .split('&')
     .map(categoryString => {
@@ -77,8 +75,8 @@ function parseUrlParams() {
     });
 }
 
-function initFromUrl(oldFilterList) {
-  var activeFilterList = parseUrlParams();
+function initFromUrl(oldFilterList, url) {
+  var activeFilterList = parseUrlParams(url);
   if (activeFilterList.length === 0) return oldFilterList;
   var filterList = [...oldFilterList];
   activeFilterList.forEach(({ query, params }) => {
@@ -119,7 +117,7 @@ class App extends Component {
 
   dispatchInit = () =>
     this.setState(oldState =>
-      initCheckboxesReducer(oldState, { type: 'INIT_CHECKBOX' })
+      initCheckboxesReducer(oldState, { type: 'INIT_CHECKBOX', value: window.location.href })
     );
 
   dispatch = action =>
